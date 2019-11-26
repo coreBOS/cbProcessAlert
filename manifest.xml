@@ -40,7 +40,7 @@
   `whilein` varchar(155) DEFAULT NULL,
   `active` varchar(3) DEFAULT NULL,
   `context` int(11) DEFAULT NULL,
-  `schtypeid` int(10) DEFAULT 0,
+  `schtypeid` varchar(40) DEFAULT NULL,
   `schtime` varchar(20) DEFAULT NULL,
   `schdayofmonth` varchar(200) DEFAULT NULL,
   `schdayofweek` varchar(200) DEFAULT NULL,
