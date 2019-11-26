@@ -40,14 +40,14 @@
   `whilein` varchar(155) DEFAULT NULL,
   `active` varchar(3) DEFAULT NULL,
   `context` int(11) DEFAULT NULL,
-  `schtypeid` int(10) DEFAULT NULL,
+  `schtypeid` int(10) DEFAULT 0,
   `schtime` varchar(20) DEFAULT NULL,
   `schdayofmonth` varchar(200) DEFAULT NULL,
   `schdayofweek` varchar(200) DEFAULT NULL,
   `schannualdates` varchar(200) DEFAULT NULL,
   `schminuteinterval` varchar(200) DEFAULT NULL,
   PRIMARY KEY (`cbprocessalertid`),
-  INDEX(`module`,`active`)
+  INDEX(`processflow`,`active`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8]]></sql>
 </table>
 <table>
