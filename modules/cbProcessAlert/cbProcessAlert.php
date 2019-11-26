@@ -130,8 +130,22 @@ class cbProcessAlert extends CRMEntity {
 	 */
 	public function vtlib_handler($modulename, $event_type) {
 		if ($event_type == 'module.postinstall') {
+			global $adb;
 			// TODO Handle post installation actions
 			$this->setModuleSeqNumber('configure', $modulename, 'bpmalrt-', '0000000001');
+			// Relation with Workflows
+			$module = Vtiger_Module::getInstance($modulename);
+			$newrelid = $adb->getUniqueID('vtiger_relatedlists');
+			$adb->query("INSERT INTO vtiger_relatedlists
+				(relation_id, tabid, related_tabid, name, sequence, label, presence, actions) VALUES
+				($newrelid, ".$module->id.", 0, 'getWorkflowRelatedList', '1', 'com_vtiger_workflow',0,'ADD,SELECT');");
+			require_once 'include/events/include.inc';
+			$em = new VTEventsManager($adb);
+			$em->registerHandler('vtiger.entity.aftersave', 'modules/cbProcessAlert/AlertSettingsHandler.php', 'cbProcessAlertSettingsHandler');
+			echo "<h4>aftersave event registered.</h4>";
+			$emm = new VTEntityMethodManager($adb);
+			$emm->addEntityMethod('*', 'deleteFromProcessAlertQueueCurrent', 'modules/cbProcessAlert/deleteFromProcessAlertQueue.php', 'deleteFromProcessAlertQueueCurrent');
+			$emm->addEntityMethod('*', 'deleteFromProcessAlertQueueAll', 'modules/cbProcessAlert/deleteFromProcessAlertQueue.php', 'deleteFromProcessAlertQueueAll');
 		} elseif ($event_type == 'module.disabled') {
 			// TODO Handle actions when this module is disabled.
 		} elseif ($event_type == 'module.enabled') {

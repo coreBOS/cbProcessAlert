@@ -60,8 +60,8 @@
 <table>
 <name>vtiger_cbprocessalertqueue</name>
 <sql><![CDATA[CREATE TABLE `vtiger_cbprocessalertqueue` (
-  `cbprocessalertqueueid` int(11) NOT NULL,
-  `crmid` int(11) DEFAULT NULL,
+  `cbprocessalertqueueid` int(11) NOT NULL AUTO_INCREMENT,
+  `crmid` varchar(81) DEFAULT NULL,
   `whenarrived` datetime,
   `alertid` int(11) DEFAULT NULL,
   `nexttrigger_time` datetime DEFAULT NULL,
