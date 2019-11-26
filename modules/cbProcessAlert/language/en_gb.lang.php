@@ -22,7 +22,7 @@ $mod_strings = array(
 	'cbprocessalert_no' => 'Alert No',
 	'processflow' => 'Process Flow',
 	'context' => 'Context',
-	'whilein' => 'While In',
+	'whilein' => 'Set To',
 	'active' => 'Active',
 );
 ?>
