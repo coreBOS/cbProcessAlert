@@ -8,6 +8,6 @@
  * All Rights Reserved.
  ************************************************************************************/
 require_once 'modules/Vtiger/EditView.php';
-
+require 'modules/cbProcessAlert/setupschedule.php';
 $smarty->display('salesEditView.tpl');
 ?>

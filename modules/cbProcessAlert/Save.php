@@ -7,5 +7,34 @@
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
  ************************************************************************************/
+
+require_once 'modules/com_vtiger_workflow/tasks/VTCreateEventTask.inc';
+$schannualdates = DateTimeField::convertToDBFormat($_REQUEST['schdate']);
+$_REQUEST['schannualdates'] = json_encode(array($schannualdates));
+$_REQUEST['schtime'] = VTCreateEventTask::conv12to24hour($_REQUEST['schtime']).':00';
+$_REQUEST['schdayofmonth'] = isset($_REQUEST['schdayofmonth']) ? json_encode($_REQUEST['schdayofmonth']) : '';
+$schdayofweek = array();
+if (isset($_REQUEST['sun_flag']) && $_REQUEST['sun_flag'] != null) {
+	$schdayofweek[] = 1;
+}
+if (isset($_REQUEST['mon_flag']) && $_REQUEST['mon_flag'] != null) {
+	$schdayofweek[] = 2;
+}
+if (isset($_REQUEST['tue_flag']) && $_REQUEST['tue_flag'] != null) {
+	$schdayofweek[] = 3;
+}
+if (isset($_REQUEST['wed_flag']) && $_REQUEST['wed_flag'] != null) {
+	$schdayofweek[] = 4;
+}
+if (isset($_REQUEST['thu_flag']) && $_REQUEST['thu_flag'] != null) {
+	$schdayofweek[] = 5;
+}
+if (isset($_REQUEST['fri_flag']) && $_REQUEST['fri_flag'] != null) {
+	$schdayofweek[] = 6;
+}
+if (isset($_REQUEST['sat_flag']) && $_REQUEST['sat_flag'] != null) {
+	$schdayofweek[] = 7;
+}
+$_REQUEST['schdayofweek'] = json_encode($schdayofweek);
 require_once 'modules/Vtiger/Save.php';
 ?>
