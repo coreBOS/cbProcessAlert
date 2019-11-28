@@ -64,6 +64,7 @@
   `crmid` varchar(81) DEFAULT NULL,
   `whenarrived` datetime,
   `alertid` int(11) DEFAULT NULL,
+  `wfid` int(11) DEFAULT NULL,
   `nexttrigger_time` datetime DEFAULT NULL,
   PRIMARY KEY (`cbprocessalertqueueid`),
   INDEX(`nexttrigger_time`)

@@ -26,14 +26,15 @@ $adminTimeZone = $admin->time_zone;
 @date_default_timezone_set($adminTimeZone);
 $currentTimestamp = date('Y-m-d H:i:s');
 @date_default_timezone_set($default_timezone);
+
+// Alerting
 $rsa = $adb->pquery(
-	"select context, schtypeid, schtime, schdayofmonth, schdayofweek, schannualdates, schminuteinterval, crmid, alertid
+	"select cbprocessalertqueueid, context, schtypeid, schtime, schdayofmonth, schdayofweek, schannualdates, schminuteinterval, crmid, alertid
 	from vtiger_cbprocessalertqueue
 	inner join vtiger_cbprocessalert on cbprocessalertid=alertid
 	where nexttrigger_time='' OR nexttrigger_time IS NULL OR nexttrigger_time<=?",
 	array($currentTimestamp)
 );
-
 $wf = new Workflow();
 while ($alert=$adb->fetch_array($rsa)) {
 	// do batch control here
@@ -72,10 +73,36 @@ while ($alert=$adb->fetch_array($rsa)) {
 	$wf->setup($alert);
 	$next = $wf->getNextTriggerTime();
 	if (empty($next)) {
-		$adb->pquery('delete from vtiger_cbprocessalertqueue where crmid=? and alertid=?', array($alert['crmid'], $alert['alertid']));
+		$adb->pquery('delete from vtiger_cbprocessalertqueue where cbprocessalertqueueid=?', array($alert['cbprocessalertqueueid']));
 	} else {
 		$adb->pquery('update vtiger_cbprocessalertqueue set nexttrigger_time=? where crmid=? and alertid=?', array($next, $alert['crmid'], $alert['alertid']));
 	}
 }
-unset($wf);
+unset($wf, $rsa);
+
+// Steps
+$rss = $adb->query('select cbprocessalertqueueid, context, crmid, wfid
+	from vtiger_cbprocessalertqueue
+	inner join vtiger_cbprocessstep on cbprocessstepid=alertid
+	where nexttrigger_time=0 and wfid>0');
+while ($step=$adb->fetch_array($rss)) {
+	// do batch control here
+	// process context map
+	$context = array();
+	$moduleName = getSalesEntityType($step['crmid']);
+	if (!empty($step['context'])) {
+		$cbfrom = CRMEntity::getInstance($moduleName);
+		$cbfrom->retrieve_entity_info($step['crmid'], $moduleName);
+		$cbMap = cbMap::getMapByID($step['context']);
+		$context = $cbMap->Mapping($cbfrom->column_fields, $context);
+	}
+	// WFs
+	if (strpos($step['crmid'], 'x')===false) {
+		$wsid = vtws_getEntityId($moduleName).'x'.$step['crmid'];
+	} else {
+		$wsid = $step['crmid'];
+	}
+	cbwsExecuteWorkflowWithContext($step['wfid'], $wsid, $context, $current_user);
+	$adb->pquery('delete from vtiger_cbprocessalertqueue where cbprocessalertqueueid=?', array($step['cbprocessalertqueueid']));
+}
 ?>

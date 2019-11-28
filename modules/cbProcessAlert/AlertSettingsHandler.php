@@ -36,12 +36,38 @@ class cbProcessAlertSettingsHandler extends VTEventHandler {
 				$pfcondition = $adb->query_result($rs, 0, 'pfcondition');
 				if (empty($pfcondition) || coreBOS_Rule::evaluate($pfcondition, $crmid)) {
 					$val = $entityData->get($pffield);
+					// Step Actions
+					$was = $entityDelta->getOldValue($moduleName, $crmid, $pffield);
+					$rss = $adb->pquery(
+						'select cbprocessstepid, context
+						from vtiger_cbprocessstep
+						inner join vtiger_crmentity on crmid=cbprocessstepid
+						where deleted=0 and processflow=? and fromstep=? and tostep=? and active=?',
+						array($rs->fields['cbprocessflowid'], $was, $val, '1')
+					);
+					if ($rss && $adb->num_rows($rss)>0) {
+						$wfs = $adb->pquery('SELECT wfid FROM vtiger_cbprocesssteprel WHERE stepid=? and positive', array($rss->fields['cbprocessstepid']));
+						// insert into queue
+						while ($wf = $adb->fetch_array(($wfs))) {
+							$checkpresence = $adb->pquery(
+								'SELECT 1 FROM vtiger_cbprocessalertqueue WHERE crmid=? AND wfid=? AND nexttrigger_time=0',
+								array($crmid, $wf['wfid'])
+							);
+							if ($checkpresence && $adb->num_rows($checkpresence)==0) {
+								$adb->pquery(
+									'insert into vtiger_cbprocessalertqueue (crmid, whenarrived, alertid, wfid, nexttrigger_time) values (?,NOW(),0,?,0)',
+									array($crmid, $wf['wfid'])
+								);
+							}
+						}
+					}
+					// Alerting
 					$rsa = $adb->pquery(
 						'select *
 						from vtiger_cbprocessalert
 						inner join vtiger_crmentity on crmid=cbprocessalertid
 						where deleted=0 and processflow=? and active=? and whilein=?',
-						array($adb->query_result($rs, 0, 'cbprocessflowid'), '1', $val)
+						array($rs->fields['cbprocessflowid'], '1', $val)
 					);
 					if ($rsa && $adb->num_rows($rsa)>0) {
 						// calculate next trigger time
@@ -58,12 +84,12 @@ class cbProcessAlertSettingsHandler extends VTEventHandler {
 						// insert into queue
 						$checkpresence = $adb->pquery(
 							'SELECT 1 FROM vtiger_cbprocessalertqueue WHERE crmid=? AND alertid=?',
-							array($crmid, $adb->query_result($rsa, 0, 'cbprocessalertid'))
+							array($crmid, $rsa->fields['cbprocessalertid'])
 						);
 						if ($checkpresence && $adb->num_rows($checkpresence)==0) {
 							$adb->pquery(
-								'insert into vtiger_cbprocessalertqueue (crmid, whenarrived, alertid, nexttrigger_time) values (?,NOW(),?,?)',
-								array($crmid, $adb->query_result($rsa, 0, 'cbprocessalertid'), $next)
+								'insert into vtiger_cbprocessalertqueue (crmid, whenarrived, alertid, wfid, nexttrigger_time) values (?,NOW(),?,0,?)',
+								array($crmid, $rsa->fields['cbprocessalertid'], $next)
 							);
 						}
 					}
