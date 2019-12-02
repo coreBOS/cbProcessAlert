@@ -30,10 +30,10 @@ class cbProcessAlertSettingsHandler extends VTEventHandler {
 		if ($rs && $adb->num_rows($rs)>0) {
 			$crmid = $entityData->getId();
 			$entityDelta = new VTEntityDelta();
-			$pffield = $adb->query_result($rs, 0, 'pffield');
+			$pffield = $rs->fields['pffield'];
 			$hasChanged = $entityDelta->hasChanged($moduleName, $crmid, $pffield);
 			if ($hasChanged || $entityData->isNew()) {
-				$pfcondition = $adb->query_result($rs, 0, 'pfcondition');
+				$pfcondition = $rs->fields['pfcondition'];
 				if (empty($pfcondition) || coreBOS_Rule::evaluate($pfcondition, $crmid)) {
 					$val = $entityData->get($pffield);
 					// Step Actions
@@ -50,13 +50,13 @@ class cbProcessAlertSettingsHandler extends VTEventHandler {
 						// insert into queue
 						while ($wf = $adb->fetch_array(($wfs))) {
 							$checkpresence = $adb->pquery(
-								'SELECT 1 FROM vtiger_cbprocessalertqueue WHERE crmid=? AND wfid=? AND nexttrigger_time=0',
+								'SELECT 1 FROM vtiger_cbprocessalertqueue WHERE crmid=? AND wfid=? AND nexttrigger_time IS NULL',
 								array($crmid, $wf['wfid'])
 							);
 							if ($checkpresence && $adb->num_rows($checkpresence)==0) {
 								$adb->pquery(
-									'insert into vtiger_cbprocessalertqueue (crmid, whenarrived, alertid, wfid, nexttrigger_time) values (?,NOW(),0,?,0)',
-									array($crmid, $wf['wfid'])
+									'insert into vtiger_cbprocessalertqueue (crmid, whenarrived, alertid, wfid, nexttrigger_time) values (?,NOW(),?,?,null)',
+									array($crmid, $rss->fields['cbprocessstepid'], $wf['wfid'])
 								);
 							}
 						}
