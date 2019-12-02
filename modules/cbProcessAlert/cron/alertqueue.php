@@ -26,20 +26,30 @@ $adminTimeZone = $admin->time_zone;
 @date_default_timezone_set($adminTimeZone);
 $currentTimestamp = date('Y-m-d H:i:s');
 @date_default_timezone_set($default_timezone);
-
+if (is_null($current_user)) {
+	$current_user = $admin;
+}
 // Alerting
 $rsa = $adb->pquery(
-	"select cbprocessalertqueueid, context, schtypeid, schtime, schdayofmonth, schdayofweek, schannualdates, schminuteinterval, crmid, alertid
+	"select cbprocessalertqueueid, processflow, whilein, context, schtypeid, schtime, schdayofmonth, schdayofweek, schannualdates, schminuteinterval, crmid, alertid
 	from vtiger_cbprocessalertqueue
 	inner join vtiger_cbprocessalert on cbprocessalertid=alertid
 	where nexttrigger_time='' OR nexttrigger_time IS NULL OR nexttrigger_time<=?",
 	array($currentTimestamp)
 );
 $wf = new Workflow();
+$pflwwsid = vtws_getEntityId('cbProcessFlow').'x';
+$paltwsid = vtws_getEntityId('cbProcessAlert').'x';
+$pstpwsid = vtws_getEntityId('cbProcessStep').'x';
 while ($alert=$adb->fetch_array($rsa)) {
 	// do batch control here
 	// process context map
-	$context = array();
+	$context = array(
+		'ProcessRelatedFlow' => $alert['processflow'],
+		'ProcessRelatedStepOrAlert' => $alert['alertid'],
+		'ProcessPreviousStatus' => '',
+		'ProcessNextStatus' => $alert['whilein'],
+	);
 	$moduleName = getSalesEntityType($alert['crmid']);
 	if (!empty($alert['context'])) {
 		$cbfrom = CRMEntity::getInstance($moduleName);
@@ -61,7 +71,7 @@ while ($alert=$adb->fetch_array($rsa)) {
 		} else {
 			$wsid = $alert['crmid'];
 		}
-		cbwsExecuteWorkflowWithContext($workflow['workflow_id'], $wsid, $context, $current_user);
+		cbwsExecuteWorkflowWithContext($workflow['workflow_id'], json_encode(array($wsid)), json_encode($context), $current_user);
 	}
 	// next trigger
 	$alert['workflow_id'] = 0;
@@ -81,14 +91,19 @@ while ($alert=$adb->fetch_array($rsa)) {
 unset($wf, $rsa);
 
 // Steps
-$rss = $adb->query('select cbprocessalertqueueid, context, crmid, wfid
+$rss = $adb->query('select cbprocessalertqueueid, processflow, fromstep, tostep, context, crmid, wfid, alertid
 	from vtiger_cbprocessalertqueue
 	inner join vtiger_cbprocessstep on cbprocessstepid=alertid
-	where nexttrigger_time=0 and wfid>0');
+	where nexttrigger_time IS NULL and wfid>0');
 while ($step=$adb->fetch_array($rss)) {
 	// do batch control here
 	// process context map
-	$context = array();
+	$context = array(
+		'ProcessRelatedFlow' => $step['processflow'],
+		'ProcessRelatedStepOrAlert' => $step['alertid'],
+		'ProcessPreviousStatus' => $step['fromstep'],
+		'ProcessNextStatus' => $step['tostep'],
+	);
 	$moduleName = getSalesEntityType($step['crmid']);
 	if (!empty($step['context'])) {
 		$cbfrom = CRMEntity::getInstance($moduleName);
@@ -102,7 +117,7 @@ while ($step=$adb->fetch_array($rss)) {
 	} else {
 		$wsid = $step['crmid'];
 	}
-	cbwsExecuteWorkflowWithContext($step['wfid'], $wsid, $context, $current_user);
+	cbwsExecuteWorkflowWithContext($step['wfid'], json_encode(array($wsid)), json_encode($context), $current_user);
 	$adb->pquery('delete from vtiger_cbprocessalertqueue where cbprocessalertqueueid=?', array($step['cbprocessalertqueueid']));
 }
 ?>
