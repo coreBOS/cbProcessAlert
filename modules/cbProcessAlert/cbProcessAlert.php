@@ -143,6 +143,7 @@ class cbProcessAlert extends CRMEntity {
 			$em = new VTEventsManager($adb);
 			$em->registerHandler('vtiger.entity.aftersave', 'modules/cbProcessAlert/AlertSettingsHandler.php', 'cbProcessAlertSettingsHandler');
 			echo "<h4>aftersave event registered.</h4>";
+			require_once 'modules/com_vtiger_workflow/VTEntityMethodManager.inc';
 			$emm = new VTEntityMethodManager($adb);
 			$emm->addEntityMethod('*', 'deleteFromProcessAlertQueueCurrent', 'modules/cbProcessAlert/deleteFromProcessAlertQueue.php', 'deleteFromProcessAlertQueueCurrent');
 			$emm->addEntityMethod('*', 'deleteFromProcessAlertQueueAll', 'modules/cbProcessAlert/deleteFromProcessAlertQueue.php', 'deleteFromProcessAlertQueueAll');
