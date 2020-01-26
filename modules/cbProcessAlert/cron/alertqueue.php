@@ -29,6 +29,8 @@ $currentTimestamp = date('Y-m-d H:i:s');
 if (is_null($current_user)) {
 	$current_user = $admin;
 }
+// we have to cleanup the relations because workflow doesn't do it, so when a workflow is deleted, that ID is not deleted from the relation
+$adb->query('delete from vtiger_cbprocesssteprel where wfid not in (select workflow_id from com_vtiger_workflows)');
 // Alerting
 $rsa = $adb->pquery(
 	"select cbprocessalertqueueid, processflow, whilein, context, schtypeid, schtime, schdayofmonth, schdayofweek, schannualdates, schminuteinterval, crmid, alertid

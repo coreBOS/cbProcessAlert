@@ -35,6 +35,8 @@ class cbProcessAlertSettingsHandler extends VTEventHandler {
 			if ($hasChanged || $entityData->isNew()) {
 				$pfcondition = $rs->fields['pfcondition'];
 				if (empty($pfcondition) || coreBOS_Rule::evaluate($pfcondition, $crmid)) {
+					// we have to cleanup the relations because workflow doesn't do it, so when a workflow is deleted, that ID is not deleted from the relation
+					$adb->query('delete from vtiger_cbprocesssteprel where wfid not in (select workflow_id from com_vtiger_workflows)');
 					$val = $entityData->get($pffield);
 					// Step Actions
 					$was = $entityDelta->getOldValue($moduleName, $crmid, $pffield);
