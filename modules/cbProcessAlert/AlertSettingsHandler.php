@@ -52,8 +52,8 @@ class cbProcessAlertSettingsHandler extends VTEventHandler {
 						// insert into queue
 						while ($wf = $adb->fetch_array(($wfs))) {
 							$checkpresence = $adb->pquery(
-								'SELECT 1 FROM vtiger_cbprocessalertqueue WHERE crmid=? AND wfid=? AND nexttrigger_time IS NULL',
-								array($crmid, $wf['wfid'])
+								'SELECT 1 FROM vtiger_cbprocessalertqueue WHERE crmid=? AND wfid=? AND alertid=? AND nexttrigger_time IS NULL',
+								array($crmid, $rss->fields['cbprocessstepid'], $wf['wfid'])
 							);
 							if ($checkpresence && $adb->num_rows($checkpresence)==0) {
 								$adb->pquery(
