@@ -44,6 +44,11 @@ $pflwwsid = vtws_getEntityId('cbProcessFlow').'x';
 $paltwsid = vtws_getEntityId('cbProcessAlert').'x';
 $pstpwsid = vtws_getEntityId('cbProcessStep').'x';
 while ($alert=$adb->fetch_array($rsa)) {
+	if (!isRecordExists($alert['crmid'])) {
+		// record has been deleted, we delete the task from the queue and continue
+		$adb->pquery('delete from vtiger_cbprocessalertqueue where cbprocessalertqueueid=?', array($alert['cbprocessalertqueueid']));
+		continue;
+	}
 	// do batch control here
 	// process context map
 	$context = array(
@@ -98,6 +103,11 @@ $rss = $adb->query('select cbprocessalertqueueid, processflow, fromstep, tostep,
 	inner join vtiger_cbprocessstep on cbprocessstepid=alertid
 	where nexttrigger_time IS NULL and wfid>0');
 while ($step=$adb->fetch_array($rss)) {
+	if (!isRecordExists($step['crmid'])) {
+		// record has been deleted, we delete the task from the queue and continue
+		$adb->pquery('delete from vtiger_cbprocessalertqueue where cbprocessalertqueueid=?', array($step['cbprocessalertqueueid']));
+		continue;
+	}
 	// do batch control here
 	// process context map
 	$context = array(
