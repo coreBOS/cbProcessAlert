@@ -42,25 +42,37 @@ class cbProcessAlertSettingsHandler extends VTEventHandler {
 						// Step Actions
 						$was = $entityDelta->getOldValue($moduleName, $crmid, $pffield);
 						$rss = $adb->pquery(
-							'select cbprocessstepid, context
+							'select cbprocessstepid, context, isactivevalidation
 							from vtiger_cbprocessstep
 							inner join vtiger_crmentity on crmid=cbprocessstepid
 							where deleted=0 and processflow=? and fromstep=? and tostep=? and active=?',
 							array($processflow['cbprocessflowid'], $was, $val, '1')
 						);
 						if ($rss && $adb->num_rows($rss)>0) {
-							$wfs = $adb->pquery('SELECT wfid FROM vtiger_cbprocesssteprel WHERE stepid=? and positive', array($rss->fields['cbprocessstepid']));
-							// insert into queue
-							while ($wf = $adb->fetch_array(($wfs))) {
-								$checkpresence = $adb->pquery(
-									'SELECT 1 FROM vtiger_cbprocessalertqueue WHERE crmid=? AND wfid=? AND alertid=? AND nexttrigger_time IS NULL',
-									array($crmid, $rss->fields['cbprocessstepid'], $wf['wfid'])
-								);
-								if ($checkpresence && $adb->num_rows($checkpresence)==0) {
-									$adb->pquery(
-										'insert into vtiger_cbprocessalertqueue (crmid, whenarrived, alertid, wfid, nexttrigger_time) values (?,NOW(),?,?,null)',
+							$validation = true;
+							if (!empty($rss->fields['isactivevalidation'])) {
+								$focus = new cbMap();
+								$focus->mode = '';
+								$focus->id = $rss->fields['isactivevalidation'];
+								$focus->retrieve_entity_info($rss->fields['isactivevalidation'], 'cbMap');
+								$entity = $entityData->getData();
+								$entityData['module'] = $moduleName;
+								$validation = $focus->Validations($entity, $crmid, false);
+							}
+							if ($validation===true) { // step is active
+								$wfs = $adb->pquery('SELECT wfid FROM vtiger_cbprocesssteprel WHERE stepid=? and positive', array($rss->fields['cbprocessstepid']));
+								// insert into queue
+								while ($wf = $adb->fetch_array(($wfs))) {
+									$checkpresence = $adb->pquery(
+										'SELECT 1 FROM vtiger_cbprocessalertqueue WHERE crmid=? AND wfid=? AND alertid=? AND nexttrigger_time IS NULL',
 										array($crmid, $rss->fields['cbprocessstepid'], $wf['wfid'])
 									);
+									if ($checkpresence && $adb->num_rows($checkpresence)==0) {
+										$adb->pquery(
+											'insert into vtiger_cbprocessalertqueue (crmid, whenarrived, alertid, wfid, nexttrigger_time) values (?,NOW(),?,?,null)',
+											array($crmid, $rss->fields['cbprocessstepid'], $wf['wfid'])
+										);
+									}
 								}
 							}
 						}
