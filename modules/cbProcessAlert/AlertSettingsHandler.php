@@ -56,7 +56,7 @@ class cbProcessAlertSettingsHandler extends VTEventHandler {
 								$focus->id = $rss->fields['isactivevalidation'];
 								$focus->retrieve_entity_info($rss->fields['isactivevalidation'], 'cbMap');
 								$entity = $entityData->getData();
-								$entityData['module'] = $moduleName;
+								$entity['module'] = $moduleName;
 								$validation = $focus->Validations($entity, $crmid, false);
 							}
 							if ($validation===true) { // step is active
