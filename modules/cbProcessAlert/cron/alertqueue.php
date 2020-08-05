@@ -36,7 +36,7 @@ $rsa = $adb->pquery(
 	"select cbprocessalertqueueid, processflow, whilein, context, schtypeid, schtime, schdayofmonth, schdayofweek, schannualdates, schminuteinterval, crmid, alertid
 	from vtiger_cbprocessalertqueue
 	inner join vtiger_cbprocessalert on cbprocessalertid=alertid
-	where nexttrigger_time='' OR nexttrigger_time IS NULL OR nexttrigger_time<=?",
+	where nexttrigger_time is null OR nexttrigger_time IS NULL OR nexttrigger_time<=?",
 	array($currentTimestamp)
 );
 $wf = new Workflow();
