@@ -58,9 +58,11 @@ while ($alert=$adb->fetch_array($rsa)) {
 		'ProcessNextStatus' => $alert['whilein'],
 	);
 	$moduleName = getSalesEntityType($alert['crmid']);
-	if (!empty($alert['context'])) {
-		$cbfrom = CRMEntity::getInstance($moduleName);
-		$cbfrom->retrieve_entity_info($alert['crmid'], $moduleName);
+	$cbfrom = CRMEntity::getInstance($moduleName);
+	$cbfrom->retrieve_entity_info($alert['crmid'], $moduleName);
+	if (empty($alert['context'])) {
+		$context = array_merge($cbfrom->column_fields, $context);
+	} else {
 		$cbMap = cbMap::getMapByID($alert['context']);
 		$context = $cbMap->Mapping($cbfrom->column_fields, $context);
 	}
@@ -117,9 +119,11 @@ while ($step=$adb->fetch_array($rss)) {
 		'ProcessNextStatus' => $step['tostep'],
 	);
 	$moduleName = getSalesEntityType($step['crmid']);
-	if (!empty($step['context'])) {
-		$cbfrom = CRMEntity::getInstance($moduleName);
-		$cbfrom->retrieve_entity_info($step['crmid'], $moduleName);
+	$cbfrom = CRMEntity::getInstance($moduleName);
+	$cbfrom->retrieve_entity_info($step['crmid'], $moduleName);
+	if (empty($step['context'])) {
+		$context = array_merge($cbfrom->column_fields, $context);
+	} else {
 		$cbMap = cbMap::getMapByID($step['context']);
 		$context = $cbMap->Mapping($cbfrom->column_fields, $context);
 	}
