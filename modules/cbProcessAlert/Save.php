@@ -8,10 +8,10 @@
  * All Rights Reserved.
  ************************************************************************************/
 
-require_once 'modules/com_vtiger_workflow/tasks/VTCreateEventTask.inc';
 $schannualdates = DateTimeField::convertToDBFormat($_REQUEST['schdate']);
 $_REQUEST['schannualdates'] = json_encode(array($schannualdates));
-$_REQUEST['schtime'] = VTCreateEventTask::conv12to24hour($_REQUEST['schtime']).':00';
+$fmt = (date('a', strtotime($_REQUEST['schtime'])));
+$_REQUEST['schtime'] = DateTimeField::formatDatebaseTimeString($_REQUEST['schtime'], $fmt);
 $_REQUEST['schdayofmonth'] = isset($_REQUEST['schdayofmonth']) ? json_encode($_REQUEST['schdayofmonth']) : '';
 $schdayofweek = array();
 if (isset($_REQUEST['sun_flag']) && $_REQUEST['sun_flag'] != null) {
