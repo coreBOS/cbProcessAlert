@@ -11,9 +11,6 @@ require_once 'data/CRMEntity.php';
 require_once 'data/Tracker.php';
 
 class cbProcessAlert extends CRMEntity {
-	public $db;
-	public $log;
-
 	public $table_name = 'vtiger_cbprocessalert';
 	public $table_index= 'cbprocessalertid';
 	public $column_fields = array();
