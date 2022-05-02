@@ -9,13 +9,20 @@
  ************************************************************************************/
 
 $mod_strings = array(
-	'ModuleName' => 'Nome Modulo',
-	'SINGLE_ModuleName' => 'Nome Modulo',
-	'ModuleName ID' => 'ID Nome Modulo',
+	'cbProcessAlert' => 'Avviso Processo',
+	'SINGLE_cbProcessAlert' => 'Avviso Processo',
+	'cbProcessAlert ID' => 'ID Avviso Processo',
 
 	'LBL_CUSTOM_INFORMATION' => 'Informazione Personalizzata',
-	'LBL_MODULEBLOCK_INFORMATION' => 'Informazione Blocco del Modulo',
+	'LBL_CBPROCESSALERT_INFORMATION' => 'Informazioni Avvisi Processo',
+	'LBL_PROCESSALERTSCHEDULE_INFORMATION' => 'Informazioni Orario',
+	'LBL_DESCRIPTION_INFORMATION' => 'Descrizione',
 
-	'ModuleFieldLabel' => 'Testo Etichetta Campo Modulo',
+	'processalertname' => 'Nome Avviso',
+	'cbprocessalert_no' => 'No Avviso',
+	'processflow' => 'Flusso Processo',
+	'context' => 'Contesto',
+	'whilein' => 'Impostato',
+	'active' => 'Attivo',
 );
 ?>
