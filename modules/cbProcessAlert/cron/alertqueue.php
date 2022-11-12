@@ -19,7 +19,9 @@
 $Vtiger_Utils_Log = false;
 include_once 'vtlib/Vtiger/Module.php';
 include_once 'include/Webservices/ExecuteWorkflow.php';
+include_once 'include/Webservices/Revise.php';
 global $adb, $default_timezone, $current_user;
+$specialWFIDForPostUserAssign = -100;
 
 $admin = Users::getActiveAdminUser();
 $adminTimeZone = $admin->time_zone;
@@ -100,10 +102,12 @@ while ($alert=$adb->fetch_array($rsa)) {
 unset($wf, $rsa);
 
 // Steps
-$rss = $adb->query('select cbprocessalertqueueid, processflow, fromstep, tostep, context, crmid, wfid, alertid
+$usrwsid = vtws_getEntityId('Users').'x';
+$grpwsid = vtws_getEntityId('Groups').'x';
+$rss = $adb->query('select cbprocessalertqueueid, processflow, fromstep, tostep, context, crmid, wfid, alertid, usermap
 	from vtiger_cbprocessalertqueue
 	inner join vtiger_cbprocessstep on cbprocessstepid=alertid
-	where nexttrigger_time IS NULL and wfid>0');
+	where nexttrigger_time IS NULL and (wfid>0 or wfid='.$specialWFIDForPostUserAssign.')');
 while ($step=$adb->fetch_array($rss)) {
 	if (!isRecordExists($step['crmid'])) {
 		// record has been deleted, we delete the task from the queue and continue
@@ -133,7 +137,23 @@ while ($step=$adb->fetch_array($rss)) {
 	} else {
 		$wsid = $step['crmid'];
 	}
-	cbwsExecuteWorkflowWithContext($step['wfid'], json_encode(array($wsid)), json_encode($context), $current_user);
+	if ($step['wfid']==$specialWFIDForPostUserAssign) {
+		if (!empty($step['usermap'])) {
+			$newuserid = coreBOS_Rule::evaluate($step['usermap'], $step['crmid']);
+			if (!empty($newuserid)) {
+				if (strpos($newuserid, 'x')===false) {
+					if (empty(getUserName($newuserid))) {
+						$newuserid = $grpwsid.$newuserid;
+					} else {
+						$newuserid = $usrwsid.$newuserid;
+					}
+				}
+				vtws_revise(array('id'=>$wsid,'assigned_user_id'=>$newuserid), $current_user);
+			}
+		}
+	} else {
+		cbwsExecuteWorkflowWithContext($step['wfid'], json_encode(array($wsid)), json_encode($context), $current_user);
+	}
 	$adb->pquery('delete from vtiger_cbprocessalertqueue where cbprocessalertqueueid=?', array($step['cbprocessalertqueueid']));
 }
 ?>
