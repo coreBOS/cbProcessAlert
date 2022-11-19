@@ -93,8 +93,8 @@ class cbProcessAlertSettingsHandler extends VTEventHandler {
 									);
 									if ($checkpresence && $adb->num_rows($checkpresence)==0) {
 										$adb->pquery(
-											'insert into vtiger_cbprocessalertqueue (crmid, whenarrived, alertid, wfid, nexttrigger_time) values (?,NOW(),?,?,null)',
-											array($crmid, $rss->fields['cbprocessstepid'], $wf['wfid'])
+											'insert into vtiger_cbprocessalertqueue (crmid, whenarrived, alertid, wfid, nexttrigger_time, executeuser) values (?,NOW(),?,?,null,?)',
+											array($crmid, $rss->fields['cbprocessstepid'], $wf['wfid'], $current_user->id)
 										);
 									}
 								}
@@ -107,8 +107,8 @@ class cbProcessAlertSettingsHandler extends VTEventHandler {
 										$specialWFIDForPostUserAssign = -100;
 										// we don't check for presence, if there is more than one we do them all
 										$adb->pquery(
-											'insert into vtiger_cbprocessalertqueue (crmid, whenarrived, alertid, wfid, nexttrigger_time) values (?,NOW(),?,?,null)',
-											array($crmid, $rss->fields['cbprocessstepid'], $specialWFIDForPostUserAssign)
+											'insert into vtiger_cbprocessalertqueue (crmid, whenarrived, alertid, wfid, nexttrigger_time,executeuser) values (?,NOW(),?,?,null,?)',
+											array($crmid, $rss->fields['cbprocessstepid'], $specialWFIDForPostUserAssign, $current_user->id)
 										);
 									}
 								}
@@ -140,9 +140,10 @@ class cbProcessAlertSettingsHandler extends VTEventHandler {
 								array($crmid, $rsa->fields['cbprocessalertid'])
 							);
 							if ($checkpresence && $adb->num_rows($checkpresence)==0) {
+								// alerts are executed as the admin user > can be changed here
 								$adb->pquery(
-									'insert into vtiger_cbprocessalertqueue (crmid, whenarrived, alertid, wfid, nexttrigger_time) values (?,NOW(),?,0,?)',
-									array($crmid, $rsa->fields['cbprocessalertid'], $next)
+									'insert into vtiger_cbprocessalertqueue (crmid, whenarrived, alertid, wfid, nexttrigger_time,executeuser) values (?,NOW(),?,0,?,0)',
+									array($crmid, $rsa->fields['cbprocessalertid'])
 								);
 							}
 						}

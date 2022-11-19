@@ -35,7 +35,7 @@ if (is_null($current_user)) {
 $adb->query('delete from vtiger_cbprocesssteprel where wfid not in (select workflow_id from com_vtiger_workflows)');
 // Alerting
 $rsa = $adb->pquery(
-	"select cbprocessalertqueueid, processflow, whilein, context, schtypeid, schtime, schdayofmonth, schdayofweek, schannualdates, schminuteinterval, crmid, alertid
+	"select cbprocessalertqueueid, processflow, whilein, context, schtypeid, schtime, schdayofmonth, schdayofweek, schannualdates, schminuteinterval, crmid, alertid, executeuser
 	from vtiger_cbprocessalertqueue
 	inner join vtiger_cbprocessalert on cbprocessalertid=alertid
 	where nexttrigger_time is null OR nexttrigger_time IS NULL OR nexttrigger_time<=?",
@@ -82,7 +82,13 @@ while ($alert=$adb->fetch_array($rsa)) {
 		} else {
 			$wsid = $alert['crmid'];
 		}
-		cbwsExecuteWorkflowWithContext($workflow['workflow_id'], json_encode(array($wsid)), json_encode($context), $current_user);
+		$wfuser = new Users();
+		if (Users::is_ActiveUserID($alert['executeuser'])) {
+			$wfuser->retrieveCurrentUserInfoFromFile($alert['executeuser']);
+		} else {
+			$wfuser = $current_user;
+		}
+		cbwsExecuteWorkflowWithContext($workflow['workflow_id'], json_encode(array($wsid)), json_encode($context), $wfuser);
 	}
 	// next trigger
 	$alert['workflow_id'] = 0;
@@ -104,7 +110,7 @@ unset($wf, $rsa);
 // Steps
 $usrwsid = vtws_getEntityId('Users').'x';
 $grpwsid = vtws_getEntityId('Groups').'x';
-$rss = $adb->query('select cbprocessalertqueueid, processflow, fromstep, tostep, context, crmid, wfid, alertid, usermap
+$rss = $adb->query('select cbprocessalertqueueid, processflow, fromstep, tostep, context, crmid, wfid, alertid, usermap, executeuser
 	from vtiger_cbprocessalertqueue
 	inner join vtiger_cbprocessstep on cbprocessstepid=alertid
 	where nexttrigger_time IS NULL and (wfid>0 or wfid='.$specialWFIDForPostUserAssign.')');
@@ -137,6 +143,12 @@ while ($step=$adb->fetch_array($rss)) {
 	} else {
 		$wsid = $step['crmid'];
 	}
+	$wfuser = new Users();
+	if (Users::is_ActiveUserID($alert['executeuser'])) {
+		$wfuser->retrieveCurrentUserInfoFromFile($alert['executeuser']);
+	} else {
+		$wfuser = $current_user;
+	}
 	if ($step['wfid']==$specialWFIDForPostUserAssign) {
 		if (!empty($step['usermap'])) {
 			$newuserid = coreBOS_Rule::evaluate($step['usermap'], $step['crmid']);
@@ -148,11 +160,11 @@ while ($step=$adb->fetch_array($rss)) {
 						$newuserid = $usrwsid.$newuserid;
 					}
 				}
-				vtws_revise(array('id'=>$wsid,'assigned_user_id'=>$newuserid), $current_user);
+				vtws_revise(array('id'=>$wsid,'assigned_user_id'=>$newuserid), $wfuser);
 			}
 		}
 	} else {
-		cbwsExecuteWorkflowWithContext($step['wfid'], json_encode(array($wsid)), json_encode($context), $current_user);
+		cbwsExecuteWorkflowWithContext($step['wfid'], json_encode(array($wsid)), json_encode($context), $wfuser);
 	}
 	$adb->pquery('delete from vtiger_cbprocessalertqueue where cbprocessalertqueueid=?', array($step['cbprocessalertqueueid']));
 }
