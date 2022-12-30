@@ -76,20 +76,25 @@ while ($alert=$adb->fetch_array($rsa)) {
 		WHERE (vtiger_crmentityrel.crmid = ? OR vtiger_crmentityrel.relcrmid = ?)',
 		array($alert['alertid'], $alert['alertid'])
 	);
-	while ($workflow=$adb->fetch_array($wfrs)) {
-		if (strpos($alert['crmid'], 'x')===false) {
-			$wsid = vtws_getEntityId($moduleName).'x'.$alert['crmid'];
-		} else {
-			$wsid = $alert['crmid'];
-		}
-		$wfuser = new Users();
-		if (Users::is_ActiveUserID($alert['executeuser'])) {
-			$wfuser->retrieveCurrentUserInfoFromFile($alert['executeuser']);
-		} else {
-			$wfuser = $current_user;
-		}
-		cbwsExecuteWorkflowWithContext($workflow['workflow_id'], json_encode(array($wsid)), json_encode($context), $wfuser);
+	if (strpos($alert['crmid'], 'x')===false) {
+		$wsid = vtws_getEntityId($moduleName).'x'.$alert['crmid'];
+	} else {
+		$wsid = $alert['crmid'];
 	}
+	$wfuser = new Users();
+	if (Users::is_ActiveUserID($alert['executeuser'])) {
+		$wfuser->retrieveCurrentUserInfoFromFile($alert['executeuser']);
+	} else {
+		$wfuser = $current_user;
+	}
+	$hold_user = $current_user;
+	$current_user = $wfuser;
+	$entities = json_encode(array($wsid));
+	$ctx = json_encode($context);
+	while ($workflow=$adb->fetch_array($wfrs)) {
+		cbwsExecuteWorkflowWithContext($workflow['workflow_id'], $entities, $ctx, $wfuser);
+	}
+	$current_user = $hold_user;
 	// next trigger
 	$alert['workflow_id'] = 0;
 	$alert['module_name'] = $moduleName;
@@ -144,11 +149,13 @@ while ($step=$adb->fetch_array($rss)) {
 		$wsid = $step['crmid'];
 	}
 	$wfuser = new Users();
-	if (Users::is_ActiveUserID($alert['executeuser'])) {
-		$wfuser->retrieveCurrentUserInfoFromFile($alert['executeuser']);
+	if (Users::is_ActiveUserID($step['executeuser'])) {
+		$wfuser->retrieveCurrentUserInfoFromFile($step['executeuser']);
 	} else {
 		$wfuser = $current_user;
 	}
+	$hold_user = $current_user;
+	$current_user = $wfuser;
 	if ($step['wfid']==$specialWFIDForPostUserAssign) {
 		if (!empty($step['usermap'])) {
 			$newuserid = coreBOS_Rule::evaluate($step['usermap'], $step['crmid']);
@@ -166,6 +173,7 @@ while ($step=$adb->fetch_array($rss)) {
 	} else {
 		cbwsExecuteWorkflowWithContext($step['wfid'], json_encode(array($wsid)), json_encode($context), $wfuser);
 	}
+	$current_user = $hold_user;
 	$adb->pquery('delete from vtiger_cbprocessalertqueue where cbprocessalertqueueid=?', array($step['cbprocessalertqueueid']));
 }
 ?>
