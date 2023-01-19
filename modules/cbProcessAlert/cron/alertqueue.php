@@ -20,7 +20,7 @@ $Vtiger_Utils_Log = false;
 include_once 'vtlib/Vtiger/Module.php';
 include_once 'include/Webservices/ExecuteWorkflow.php';
 include_once 'include/Webservices/Revise.php';
-global $adb, $default_timezone, $current_user;
+global $adb, $default_timezone, $current_user, $logbg;
 $specialWFIDForPostUserAssign = -100;
 
 $admin = Users::getActiveAdminUser();
@@ -92,7 +92,11 @@ while ($alert=$adb->fetch_array($rsa)) {
 	$entities = json_encode(array($wsid));
 	$ctx = json_encode($context);
 	while ($workflow=$adb->fetch_array($wfrs)) {
-		cbwsExecuteWorkflowWithContext($workflow['workflow_id'], $entities, $ctx, $wfuser);
+		try {
+			cbwsExecuteWorkflowWithContext($workflow['workflow_id'], $entities, $ctx, $wfuser);
+		} catch (\Throwable $th) {
+			$logbg->fatal($th->getMessage());
+		}
 	}
 	$current_user = $hold_user;
 	// next trigger
@@ -171,7 +175,11 @@ while ($step=$adb->fetch_array($rss)) {
 			}
 		}
 	} else {
-		cbwsExecuteWorkflowWithContext($step['wfid'], json_encode(array($wsid)), json_encode($context), $wfuser);
+		try {
+			cbwsExecuteWorkflowWithContext($step['wfid'], json_encode(array($wsid)), json_encode($context), $wfuser);
+		} catch (\Throwable $th) {
+			$logbg->fatal($th->getMessage());
+		}
 	}
 	$current_user = $hold_user;
 	$adb->pquery('delete from vtiger_cbprocessalertqueue where cbprocessalertqueueid=?', array($step['cbprocessalertqueueid']));
