@@ -132,10 +132,9 @@ class cbProcessAlert extends CRMEntity {
 			$this->setModuleSeqNumber('configure', $modulename, 'bpmalrt-', '0000000001');
 			// Relation with Workflows
 			$module = Vtiger_Module::getInstance($modulename);
-			$newrelid = $adb->getUniqueID('vtiger_relatedlists');
 			$adb->query("INSERT INTO vtiger_relatedlists
-				(relation_id, tabid, related_tabid, name, sequence, label, presence, actions,relationtype) VALUES
-				($newrelid, ".$module->id.", 0, 'getWorkflowRelatedList', '1', 'com_vtiger_workflow',0,'ADD,SELECT','N:N');");
+				(tabid, related_tabid, name, sequence, label, presence, actions,relationtype) VALUES
+				(".$module->id.", 0, 'getWorkflowRelatedList', '1', 'com_vtiger_workflow',0,'ADD,SELECT','N:N');");
 			require_once 'include/events/include.inc';
 			$em = new VTEventsManager($adb);
 			$em->registerHandler('vtiger.entity.aftersave', 'modules/cbProcessAlert/AlertSettingsHandler.php', 'cbProcessAlertSettingsHandler');
